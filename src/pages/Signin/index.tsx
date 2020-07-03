@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useContext } from 'react';
+import React, { useCallback, useRef } from 'react';
 import logo from '../../assets/logo.svg';
 import { Form } from '@unform/web';
 import { FormHandles } from '@unform/core';
@@ -8,7 +8,8 @@ import { Container, Background, Content } from './styles';
 import getValidationErrors from '../../utils/getValidationErrors';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
-import { AuthContext } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/auth';
+import { useToast } from '../../hooks/toast';
 
 interface SignInFormData {
   email: string;
@@ -18,7 +19,8 @@ interface SignInFormData {
 const SignIn: React.FC = () => {
   const formRef = useRef<FormHandles>(null);
 
-  const { signIn } = useContext(AuthContext);
+  const { signIn } = useAuth();
+  const { addToast } = useToast();
 
   const handleSubmit = useCallback(
     async (data: SignInFormData) => {
@@ -34,17 +36,23 @@ const SignIn: React.FC = () => {
         await schema.validate(data, {
           abortEarly: false,
         });
-        signIn({
+        await signIn({
           email: data.email,
           password: data.password,
         });
       } catch (err) {
-        const errors = getValidationErrors(err);
-        formRef.current?.setErrors(errors);
-        console.log(err);
+        if (err instanceof Yup.ValidationError) {
+          const errors = getValidationErrors(err);
+          formRef.current?.setErrors(errors);
+        }
+        addToast({
+          type: 'error',
+          title: 'Erro',
+          description: 'Erro no login',
+        });
       }
     },
-    [signIn],
+    [signIn, addToast],
   );
 
   return (
@@ -70,7 +78,7 @@ const SignIn: React.FC = () => {
           </Button>
           <a href="forgot">Esqueci minha senha</a>
         </Form>
-        <a href="">
+        <a href="asdasd">
           <FiLogIn />
           Criar Conta
         </a>
